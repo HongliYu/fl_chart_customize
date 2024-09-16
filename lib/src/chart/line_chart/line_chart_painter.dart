@@ -1258,45 +1258,23 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
     PaintHolder<LineChartData> holder,
   ) {
     final data = holder.data;
-    if (!barData.show) {
+    if (!barData.show || barData.spots.isEmpty) {
       return null;
     }
+    final spotCount = barData.spots.length;
+    final idxTemp = (touchedPoint.dx / viewSize.width * spotCount).round();
+    final idx = max(0, min(spotCount - 1, idxTemp));
+    final spot = barData.spots[idx];
 
-    /// Find the nearest spot (based on distanceCalculator)
-    final sortedSpots = <FlSpot>[];
-    double? smallestDistance;
-    for (final spot in barData.spots) {
-      if (spot.isNull()) continue;
-      final distance = data.lineTouchData.distanceCalculator(
-        touchedPoint,
-        Offset(
-          getPixelX(spot.x, viewSize, holder),
-          getPixelY(spot.y, viewSize, holder),
-        ),
-      );
+    final distance = data.lineTouchData.distanceCalculator(
+      touchedPoint,
+      Offset(
+        getPixelX(spot.x, viewSize, holder),
+        getPixelY(spot.y, viewSize, holder),
+      ),
+    );
 
-      if (distance <= data.lineTouchData.touchSpotThreshold) {
-        smallestDistance ??= distance;
-
-        if (distance < smallestDistance) {
-          sortedSpots.insert(0, spot);
-          smallestDistance = distance;
-        } else {
-          sortedSpots.add(spot);
-        }
-      }
-    }
-
-    if (sortedSpots.isNotEmpty) {
-      return TouchLineBarSpot(
-        barData,
-        barDataPosition,
-        sortedSpots.first,
-        smallestDistance!,
-      );
-    } else {
-      return null;
-    }
+    return TouchLineBarSpot(barData, barDataPosition, spot, distance);
   }
 }
 
